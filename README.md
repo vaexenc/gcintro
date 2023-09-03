@@ -4,7 +4,7 @@
 
 The majority of the work was done in Blender, including remaking the animations from scratch. The project gets exported to glTF format and made to run in a browser using Three.js.
 
-Development is still in progress.
+Unfinished, development might resume some day.
 
 Original animation for reference: https://www.youtube.com/watch?v=CpmYW-gCSy4
 
