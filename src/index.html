@@ -1,12 +1,180 @@
 <!DOCTYPE html>
 <html lang="en">
-<head>
-	<meta charset="UTF-8">
-	<meta name="viewport" content="width=device-width, initial-scale=1.0">
-	<title>Nintendo Gamecube Intro Animation</title>
-	<link rel="shortcut icon" type="image/x-icon" href="favicon.ico"/>
-</head>
-<body>
-	<canvas class="webgl"></canvas>
-</body>
+	<head>
+		<meta charset="UTF-8">
+		<meta name="viewport" content="width=device-width, initial-scale=1.0">
+		<title>Nintendo Gamecube Intro Animation</title>
+		<meta name="description" content="Interactive 3D Nintendo GameCube intro animation in the browser">
+		<link rel="canonical" href="https://gcintro.toomuchofheaven.com/"/>
+
+		<meta property="og:type" content="website">
+		<meta property="og:url" content="https://gcintro.toomuchofheaven.com/">
+		<meta property="og:title" content="Nintendo GameCube Intro Animation">
+		<meta property="og:description" content="Interactive 3D Nintendo GameCube intro animation in the browser">
+		<meta property="og:image" content="https://i.imgur.com/bHeOvBt.png">
+		<meta property="og:image:width" content="1000">
+		<meta property="og:image:height" content="1000">
+
+		<meta name="twitter:card" content="summary_large_image">
+		<meta name="twitter:title" content="Nintendo GameCube Intro Animation">
+		<meta name="twitter:description" content="Interactive 3D Nintendo GameCube intro animation in the browser">
+		<meta name="twitter:image" content="https://i.imgur.com/bHeOvBt.png">
+
+		<link rel="shortcut icon" type="image/x-icon" href="favicon.ico"/>
+		<link rel="stylesheet" href="./style.css"/>
+		<meta name="theme-color" content="#000000">
+		<style>
+			html, body {
+				background: black;
+			}
+		</style>
+	</head>
+	<body>
+		<canvas class="webgl"></canvas>
+		<script type="module" src="./main.ts"></script>
+
+		<div class="loader" id="loader">
+			<div class="loader-box">
+				<div class="loader-track"><div class="loader-fill" id="loaderFill"></div></div>
+				<div class="loader-message">
+					<div class="loader-status">Loading</div>
+					<div class="loader-hint">Click to continue</div>
+				</div>
+			</div>
+		</div>
+
+		<div class="ui idle" id="ui">
+			<div class="bar">
+				<button class="btn btn-primary" id="playPause" title="Play / Pause (Space)" aria-label="Play / Pause (Space)">
+					<svg viewBox="0 0 24 24"><path id="playPath" d="M8 5v14l11-7z"/></svg>
+				</button>
+
+				<div class="transport">
+					<button class="btn" id="rewind" title="Rewind to start (R)" aria-label="Rewind to start (R)">
+						<svg viewBox="0 0 24 24"><path d="M6 5h2v14H6zM20 5v14l-11-7z"/></svg>
+					</button>
+					<button class="btn" id="frameBack" title="Previous frame (,)" aria-label="Previous frame (,)">
+						<svg viewBox="0 0 24 24"><path d="M16 5v14L7 12zM6 5h1.5v14H6z"/></svg>
+					</button>
+					<button class="btn" id="frameForward" title="Next frame (.)" aria-label="Next frame (.)">
+						<svg viewBox="0 0 24 24"><path d="M8 5v14l9-7zM16.5 5H18v14h-1.5z"/></svg>
+					</button>
+				</div>
+
+				<span class="time" id="timeCurrent">0:00</span>
+				<input type="range" class="seek" id="seek" min="0" max="1" step="0.001" value="0" aria-label="Seek">
+
+				<button class="btn" id="muteToggle" title="Mute" aria-label="Mute">
+					<svg viewBox="0 0 24 24"><path id="mutePath" d="M3 9v6h4l5 5V4L7 9H3zm13.5 3c0-1.77-1.02-3.29-2.5-4.03v8.05c1.48-.73 2.5-2.25 2.5-4.02zM14 3.23v2.06c2.89.86 5 3.54 5 6.71s-2.11 5.85-5 6.71v2.06c4.01-.91 7-4.49 7-8.77s-2.99-7.86-7-8.77z"/></svg>
+				</button>
+				<input type="range" class="volume" id="volume" min="0" max="1" step="0.01" value="1" aria-label="Volume">
+
+				<button class="btn" id="infoToggle" title="Info" aria-label="Info" aria-expanded="false">
+					<svg viewBox="0 0 24 24"><path d="M11 18h2v-2h-2v2zm1-16C6.48 2 2 6.48 2 12s4.48 10 10 10 10-4.48 10-10S17.52 2 12 2zm0 18c-4.41 0-8-3.59-8-8s3.59-8 8-8 8 3.59 8 8-3.59 8-8 8zm0-14c-2.21 0-4 1.79-4 4h2c0-1.1.9-2 2-2s2 .9 2 2c0 2-3 1.75-3 5h2c0-2.25 3-2.5 3-5 0-2.21-1.79-4-4-4z"/></svg>
+				</button>
+
+				<button class="btn" id="settingsToggle" title="Settings (S)" aria-label="Settings (S)" aria-expanded="false">
+					<svg viewBox="0 0 24 24"><path d="M19.14 12.94c.04-.3.06-.61.06-.94 0-.32-.02-.64-.07-.94l2.03-1.58c.18-.14.23-.41.12-.61l-1.92-3.32c-.12-.22-.37-.29-.59-.22l-2.39.96c-.5-.38-1.03-.7-1.62-.94l-.36-2.54c-.04-.24-.24-.41-.48-.41h-3.84c-.24 0-.43.17-.47.41l-.36 2.54c-.59.24-1.13.57-1.62.94l-2.39-.96c-.22-.08-.47 0-.59.22L2.74 8.87c-.12.21-.08.47.12.61l2.03 1.58c-.05.3-.09.63-.09.94s.02.64.07.94l-2.03 1.58c-.18.14-.23.41-.12.61l1.92 3.32c.12.22.37.29.59.22l2.39-.96c.5.38 1.03.7 1.62.94l.36 2.54c.05.24.24.41.48.41h3.84c.24 0 .44-.17.47-.41l.36-2.54c.59-.24 1.13-.56 1.62-.94l2.39.96c.22.08.47 0 .59-.22l1.92-3.32c.12-.22.07-.47-.12-.61l-2.01-1.58zM12 15.6c-1.98 0-3.6-1.62-3.6-3.6s1.62-3.6 3.6-3.6 3.6 1.62 3.6 3.6-1.62 3.6-3.6 3.6z"/></svg>
+				</button>
+			</div>
+
+			<div class="settings" id="settings" hidden>
+				<section>
+					<h3>Playback</h3>
+					<label class="field slider">
+						<span>Speed</span>
+						<input type="range" id="speed" min="0.01" max="4" step="0.01">
+						<output id="speedVal"></output>
+						<button type="button" class="reset" id="speedReset" title="Reset to default" aria-label="Reset to default">
+							<svg viewBox="0 0 24 24"><path d="M12 5V2L8 6l4 4V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>
+						</button>
+					</label>
+					<label class="field switch">
+						<span>Reverse</span>
+						<input type="checkbox" id="reverse">
+						<i></i>
+					</label>
+					<label class="field switch">
+						<span>Loop</span>
+						<input type="checkbox" id="loop">
+						<i></i>
+					</label>
+				</section>
+
+				<section>
+					<h3>View</h3>
+					<label class="field switch">
+						<span>Orbit camera</span>
+						<input type="checkbox" id="orbit">
+						<i></i>
+					</label>
+					<label class="field slider">
+						<span>Orbit intensity</span>
+						<input type="range" id="orbitIntensity" min="1" max="5" step="0.1">
+						<output id="orbitIntensityVal"></output>
+						<button type="button" class="reset" id="orbitIntensityReset" title="Reset to default" aria-label="Reset to default">
+							<svg viewBox="0 0 24 24"><path d="M12 5V2L8 6l4 4V7c3.31 0 6 2.69 6 6s-2.69 6-6 6-6-2.69-6-6H4c0 4.42 3.58 8 8 8s8-3.58 8-8-3.58-8-8-8z"/></svg>
+						</button>
+					</label>
+					<label class="field switch">
+						<span>Wireframe</span>
+						<input type="checkbox" id="wireframe">
+						<i></i>
+					</label>
+				</section>
+
+				<section>
+					<h3>Sound</h3>
+					<label class="field select">
+						<span>Track</span>
+						<select id="track"></select>
+					</label>
+				</section>
+			</div>
+
+			<div class="info" id="info" hidden>
+				<h3>Keyboard shortcuts</h3>
+				<div class="shortcuts">
+					<div class="shortcut-group">
+						<h4>Transport</h4>
+						<div class="shortcut"><span class="keys"><kbd>Space</kbd></span><span>Play / pause</span></div>
+						<div class="shortcut"><span class="keys"><kbd>R</kbd><kbd>Home</kbd></span><span>Rewind to start</span></div>
+						<div class="shortcut"><span class="keys"><kbd>End</kbd></span><span>Jump to end</span></div>
+					</div>
+					<div class="shortcut-group">
+						<h4>Seek</h4>
+						<div class="shortcut"><span class="keys"><kbd>&larr;</kbd><kbd>&rarr;</kbd></span><span>Jump &plusmn;0.5s</span></div>
+						<div class="shortcut"><span class="keys"><kbd>,</kbd><kbd>.</kbd></span><span>Previous / next frame</span></div>
+						<div class="shortcut"><span class="keys"><kbd>0</kbd>&ndash;<kbd>9</kbd></span><span>Seek to 0&ndash;90%</span></div>
+					</div>
+					<div class="shortcut-group">
+						<h4>Playback</h4>
+						<div class="shortcut"><span class="keys"><kbd>A</kbd><kbd>D</kbd></span><span>Speed down / up</span></div>
+						<div class="shortcut"><span class="keys"><kbd>B</kbd></span><span>Toggle reverse</span></div>
+						<div class="shortcut"><span class="keys"><kbd>L</kbd></span><span>Toggle loop</span></div>
+					</div>
+					<div class="shortcut-group">
+						<h4>Audio</h4>
+						<div class="shortcut"><span class="keys"><kbd>Q</kbd><kbd>E</kbd></span><span>Previous / next track</span></div>
+						<div class="shortcut"><span class="keys"><kbd>&uarr;</kbd><kbd>&darr;</kbd></span><span>Volume up / down</span></div>
+						<div class="shortcut"><span class="keys"><kbd>M</kbd></span><span>Mute</span></div>
+					</div>
+					<div class="shortcut-group">
+						<h4>View</h4>
+						<div class="shortcut"><span class="keys"><kbd>O</kbd></span><span>Toggle orbit</span></div>
+						<div class="shortcut"><span class="keys"><kbd>W</kbd></span><span>Toggle wireframe</span></div>
+					</div>
+					<div class="shortcut-group">
+						<h4>Panels</h4>
+						<div class="shortcut"><span class="keys"><kbd>S</kbd></span><span>Settings</span></div>
+						<div class="shortcut"><span class="keys"><kbd>I</kbd></span><span>Info</span></div>
+					</div>
+				</div>
+				<a class="repo-link" href="https://github.com/vaexenc/gcintro" target="_blank" rel="noopener noreferrer">
+					<svg viewBox="0 0 16 16" width="14" height="14" aria-hidden="true" fill="currentColor"><path d="M8 0C3.58 0 0 3.58 0 8c0 3.54 2.29 6.53 5.47 7.59.4.07.55-.17.55-.38 0-.19-.01-.82-.01-1.49-2.01.37-2.53-.49-2.69-.94-.09-.23-.48-.94-.82-1.13-.28-.15-.68-.52-.01-.53.63-.01 1.08.58 1.23.82.72 1.21 1.87.87 2.33.66.07-.52.28-.87.51-1.07-1.78-.2-3.64-.89-3.64-3.95 0-.87.31-1.59.82-2.15-.08-.2-.36-1.02.08-2.12 0 0 .67-.21 2.2.82.64-.18 1.32-.27 2-.27.68 0 1.36.09 2 .27 1.53-1.04 2.2-.82 2.2-.82.44 1.1.16 1.92.08 2.12.51.56.82 1.27.82 2.15 0 3.07-1.87 3.75-3.65 3.95.29.25.54.73.54 1.48 0 1.07-.01 1.93-.01 2.2 0 .21.15.46.55.38A8.01 8.01 0 0016 8c0-4.42-3.58-8-8-8z"/></svg>
+					<span>View source on GitHub</span>
+				</a>
+			</div>
+		</div>
+	</body>
 </html>
