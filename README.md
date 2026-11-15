@@ -1,6 +1,6 @@
 # Nintendo GameCube Intro Animation
 
-A browser recreation of the Nintendo GameCube boot-up intro, rebuilt from scratch in Blender and rendered in real time with [Three.js](https://threejs.org/). It runs as a little media player: scrub the animation, play it backwards, change speed, orbit the camera, and switch between three soundtrack variants.
+A browser recreation of the Nintendo GameCube boot-up intro, rebuilt from scratch in Blender and rendered in real time with [Three.js](https://threejs.org/). It runs as a little media player: scrub the animation, play it backwards, change speed, orbit the camera, switch between three soundtrack variants, and pick a color for the scene and controls.
 
 ## ▶ [Live demo](https://gcintro.toomuchofheaven.com)
 

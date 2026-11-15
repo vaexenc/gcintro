@@ -2,15 +2,20 @@ import * as THREE from "three";
 import {GLTF, GLTFLoader} from "three/examples/jsm/loaders/GLTFLoader.js";
 import {AudioEngine, TrackBuffers, reverseBuffer} from "./audio";
 import {OrbitController} from "./orbit";
+import {colorOption, paletteFor} from "./palette";
 import {Player} from "./player";
 import {setupScene} from "./scene";
 import {loadSettings} from "./settings";
-import {setupUi} from "./ui";
+import {applyUiPalette, setupUi} from "./ui";
 
 // GENERAL
 
 // disable the browser context menu (right-click)
 window.addEventListener("contextmenu", (event) => event.preventDefault());
+
+// persisted state; read up front so the saved color already tints the loader
+const saved = loadSettings();
+applyUiPalette(paletteFor(colorOption(saved.color)));
 
 const canvas = document.querySelector<HTMLCanvasElement>("canvas.webgl")!;
 const scene = new THREE.Scene();
@@ -51,7 +56,7 @@ const audioCtx = new (window.AudioContext ?? (window as any).webkitAudioContext)
 const init = (gltf: GLTF, matcapTexture: THREE.Texture, trackBuffers: Record<string, TrackBuffers>) => {
 	scene.add(gltf.scene);
 
-	const {camera, opacityBindings, setWireframe, orbitTarget} = setupScene(gltf, matcapTexture);
+	const {camera, opacityBindings, setWireframe, setPalette, orbitTarget} = setupScene(gltf, matcapTexture);
 	scene.add(camera);
 
 	const uiPanel = document.querySelector<HTMLElement>(".ui")!;
@@ -64,9 +69,16 @@ const init = (gltf: GLTF, matcapTexture: THREE.Texture, trackBuffers: Record<str
 	const action = mixer.clipAction(clip);
 	action.play();
 
-	// load persisted state; sound state lives on the AudioEngine, everything else
-	// (playback knobs, paused/time) is owned by the Player, which persists it all
-	const saved = loadSettings();
+	// a color change derives one palette and hands it to both the scene and the UI,
+	// so the render and the controls can't drift apart
+	const applyColor = (id: string) => {
+		const palette = paletteFor(colorOption(id));
+		setPalette(palette);
+		applyUiPalette(palette);
+	};
+
+	// apply persisted state; sound state lives on the AudioEngine, everything else
+	// (playback knobs, color, paused/time) is owned by the Player, which persists it all
 	const audio = new AudioEngine(
 		audioCtx,
 		trackBuffers,
@@ -75,7 +87,7 @@ const init = (gltf: GLTF, matcapTexture: THREE.Texture, trackBuffers: Record<str
 		saved.soundEnabled ?? true,
 		saved.volume ?? 1,
 	);
-	const player = new Player(action, mixer, clip, audio, orbit, setWireframe, saved);
+	const player = new Player(action, mixer, clip, audio, orbit, setWireframe, applyColor, saved);
 
 	const ui = setupUi({player, soundNames, trackLabels});
 

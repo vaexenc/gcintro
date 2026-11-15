@@ -1,5 +1,6 @@
 import * as THREE from "three";
 import {GLTF} from "three/examples/jsm/loaders/GLTFLoader.js";
+import {Palette, Rgb} from "./palette";
 
 // Each animated mesh group is faded by an authoring "...Opacity" empty whose x
 // position drives the material opacity (scaled, for the big cube). One shape covers
@@ -11,9 +12,33 @@ export interface SceneSetup {
 	camera: THREE.Camera;
 	opacityBindings: OpacityBinding[];
 	setWireframe: (enabled: boolean) => void;
+	// the scene half of a color option; the UI applies the same palette
+	setPalette: (palette: Palette) => void;
 	// pivot orbiting around the centre of the big cube
 	orbitTarget: THREE.Vector3;
 }
+
+const setColor = (color: THREE.Color, [r, g, b]: Rgb) => color.setRGB(r / 255, g / 255, b / 255);
+
+// GLTFLoader decodes to an ImageBitmap where supported, an <img> elsewhere (Firefox)
+type TextureImage = ImageBitmap | HTMLImageElement;
+
+// copy an image onto a canvas with every pixel's color run through recolor
+// (alpha untouched)
+const recolorImage = (image: TextureImage, recolor: (rgb: Rgb) => Rgb): HTMLCanvasElement => {
+	const canvas = document.createElement("canvas");
+	canvas.width = image.width;
+	canvas.height = image.height;
+	const context = canvas.getContext("2d")!;
+	context.drawImage(image, 0, 0);
+	const pixels = context.getImageData(0, 0, canvas.width, canvas.height);
+	const data = pixels.data;
+	for (let i = 0; i < data.length; i += 4) {
+		[data[i], data[i + 1], data[i + 2]] = recolor([data[i], data[i + 1], data[i + 2]]);
+	}
+	context.putImageData(pixels, 0, 0);
+	return canvas;
+};
 
 export const setupScene = (gltf: GLTF, matcapTexture: THREE.Texture): SceneSetup => {
 	// the camera flatten and the bounding box below read world transforms, so bake
@@ -47,9 +72,10 @@ export const setupScene = (gltf: GLTF, matcapTexture: THREE.Texture): SceneSetup
 	matcapTexture.wrapS = THREE.RepeatWrapping;
 	matcapTexture.wrapT = THREE.RepeatWrapping;
 
-	// GX TEV color registers + output shift recovered from the capture
-	const gxColorHi = {value: new THREE.Color(95 / 255, 80 / 255, 190 / 255)}; // C0, env=1
-	const gxColorLo = {value: new THREE.Color(30 / 255, 20 / 255, 60 / 255)}; // C1, env=0
+	// GX TEV color registers (from the palette, see setPalette) + output shift
+	// recovered from the capture
+	const gxColorHi = {value: new THREE.Color()}; // C0, env=1
+	const gxColorLo = {value: new THREE.Color()}; // C1, env=0
 	const gxScale = {value: 2}; // GX_CS_SCALE_2
 
 	// recovered constant env-map projection (texmtx de-rotated): uv = n.xy*scale + bias
@@ -88,15 +114,18 @@ export const setupScene = (gltf: GLTF, matcapTexture: THREE.Texture): SceneSetup
 	bigCube.material = bigMaterial;
 	bindOpacity("bigCubeOpacity", [bigMaterial], 0.5);
 
+	// trail color comes from the palette (see setPalette)
+	const trailMaterials: THREE.MeshBasicMaterial[] = [];
 	for (let i = 0; i < 15; i++) {
 		const trailObj = mesh("trail" + i);
 		trailObj.renderOrder = 1000;
 		trailObj.position.x += -0.01;
 		trailObj.position.y += 0.01;
 		trailObj.position.z += 0.01;
-		const trailMaterial = new THREE.MeshBasicMaterial({color: 0x6350bb, side: THREE.DoubleSide});
+		const trailMaterial = new THREE.MeshBasicMaterial({side: THREE.DoubleSide});
 		trailMaterial.transparent = true;
 		trailObj.material = trailMaterial;
+		trailMaterials.push(trailMaterial);
 		bindOpacity("trail" + i + "Opacity", [trailMaterial]);
 	}
 
@@ -137,10 +166,28 @@ export const setupScene = (gltf: GLTF, matcapTexture: THREE.Texture): SceneSetup
 	});
 	bindOpacity("xyzOpacity", xyzMaterials);
 
+	// the letters bake indigo into their textures, so a color change repaints a copy
+	// of each original image (kept here) rather than tinting the material
+	const letterMaps = xyzMaterials.map((letterMaterial) => {
+		const texture = letterMaterial.map!;
+		return {texture, original: texture.image as TextureImage};
+	});
+
 	const setWireframe = (enabled: boolean) => {
 		gltf.scene.traverse((node) => {
 			if (node instanceof THREE.Mesh) (node.material as THREE.MeshBasicMaterial).wireframe = enabled;
 		});
+	};
+
+	const setPalette = (palette: Palette) => {
+		setColor(gxColorLo.value, palette.gxLo);
+		setColor(gxColorHi.value, palette.gxHi);
+		for (const trailMaterial of trailMaterials) setColor(trailMaterial.color, palette.trail);
+		const recolor = palette.recolor;
+		for (const {texture, original} of letterMaps) {
+			texture.image = recolor ? recolorImage(original, recolor) : original;
+			texture.needsUpdate = true;
+		}
 	};
 
 	const orbitTarget = new THREE.Box3().setFromObject(obj("bigCube")).getCenter(new THREE.Vector3());
@@ -161,5 +208,5 @@ export const setupScene = (gltf: GLTF, matcapTexture: THREE.Texture): SceneSetup
 	camera.position.copy(worldPosition);
 	camera.quaternion.copy(worldQuaternion);
 
-	return {camera, opacityBindings, setWireframe, orbitTarget};
+	return {camera, opacityBindings, setWireframe, setPalette, orbitTarget};
 };

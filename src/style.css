@@ -1,7 +1,13 @@
 :root {
-	--accent: #7d6cf0;
-	--accent-soft: rgba(125, 108, 240, 0.18);
-	--panel: rgba(8, 5, 18, 0.4);
+	/* color channels: these defaults are indigo; the selected color option
+	   overrides them at runtime (applyUiPalette in ui.ts) */
+	--accent-rgb: 125, 108, 240;
+	--accent-hover-rgb: 141, 126, 245;
+	--panel-rgb: 8, 5, 18;
+	--accent: rgb(var(--accent-rgb));
+	--accent-soft: rgba(var(--accent-rgb), 0.18);
+	--accent-hover: rgb(var(--accent-hover-rgb));
+	--panel: rgba(var(--panel-rgb), 0.4);
 	--panel-solid: #15151f;
 	--stroke: rgba(255, 255, 255, 0.08);
 	--text: #f2f2f7;
@@ -184,7 +190,7 @@ input[type="range"].volume {
 }
 
 .btn-primary:hover {
-	background: #8d7ef5;
+	background: var(--accent-hover);
 }
 
 #settingsToggle[aria-expanded="true"] {
@@ -341,6 +347,41 @@ input[type="range"].volume {
 .field select option:checked {
 	background: var(--accent);
 	color: #fff;
+}
+
+.field.swatches {
+	grid-template-columns: 88px 1fr;
+}
+
+.swatch-group {
+	display: flex;
+	flex-wrap: wrap;
+	gap: 8px;
+}
+
+.swatch {
+	width: 18px;
+	height: 18px;
+	padding: 0;
+	border: none;
+	border-radius: 50%;
+	background: var(--swatch);
+	cursor: pointer;
+	outline: 1.5px solid transparent;
+	outline-offset: 2px;
+	transition: transform 0.12s ease, outline-color 0.15s ease;
+}
+
+.swatch:hover {
+	transform: scale(1.15);
+}
+
+.swatch:focus-visible {
+	outline-color: rgba(255, 255, 255, 0.5);
+}
+
+.swatch[aria-checked="true"] {
+	outline-color: #fff;
 }
 
 .info {

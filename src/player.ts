@@ -1,6 +1,7 @@
 import * as THREE from "three";
 import {AudioEngine} from "./audio";
 import {OrbitController} from "./orbit";
+import {colorOption} from "./palette";
 import {PlaybackState, Settings, saveSettings} from "./settings";
 
 const FPS = 60;
@@ -21,6 +22,7 @@ export class Player {
 		private audio: AudioEngine,
 		private orbit: OrbitController,
 		private applyWireframe: (enabled: boolean) => void,
+		private applyColor: (id: string) => void,
 		saved: Partial<Settings>,
 	) {
 		this.playback = {
@@ -30,6 +32,7 @@ export class Player {
 			orbitIntensity: saved.orbitIntensity ?? 1,
 			wireframe: saved.wireframe ?? false,
 			loop: saved.loop ?? true,
+			color: colorOption(saved.color).id,
 		};
 
 		// apply persisted settings on load
@@ -37,6 +40,7 @@ export class Player {
 		orbit.intensity = this.playback.orbitIntensity;
 		orbit.setEnabled(this.playback.orbit);
 		applyWireframe(this.playback.wireframe);
+		applyColor(this.playback.color);
 		this.applyLoop();
 
 		// drop the running audio source on loop wrap so it re-homes to the new clock
@@ -169,6 +173,12 @@ export class Player {
 	setWireframe(enabled: boolean) {
 		this.playback.wireframe = enabled;
 		this.applyWireframe(enabled);
+		this.save();
+	}
+
+	setColor(id: string) {
+		this.playback.color = id;
+		this.applyColor(id);
 		this.save();
 	}
 

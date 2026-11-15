@@ -9,6 +9,8 @@ export interface PlaybackState {
 	orbitIntensity: number;
 	wireframe: boolean;
 	loop: boolean;
+	// id of the selected color option (see palette.ts)
+	color: string;
 }
 
 export interface Settings extends PlaybackState {

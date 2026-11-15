@@ -1,5 +1,16 @@
 import * as THREE from "three";
+import {COLOR_OPTIONS, Palette, paletteFor} from "./palette";
 import {Player} from "./player";
+
+// the UI half of a color option; the scene applies the same palette. Only the
+// channel triplets are set: style.css builds the accent, its translucent and hover
+// variants and the panel tint from them.
+export const applyUiPalette = (palette: Palette) => {
+	const style = document.documentElement.style;
+	style.setProperty("--accent-rgb", palette.accent.join(", "));
+	style.setProperty("--accent-hover-rgb", palette.accentHover.join(", "));
+	style.setProperty("--panel-rgb", palette.panel.join(", "));
+};
 
 // Everything the control panel needs. The Player owns playback, audio and persisted
 // state; the UI just wires DOM events to its methods and reads back its getters.
@@ -250,6 +261,29 @@ export const setupUi = (deps: UiDeps): UiHandles => {
 	});
 	bindToggle("orbit", player.playback.orbit, (on) => player.setOrbitEnabled(on));
 	bindToggle("wireframe", player.playback.wireframe, (on) => player.setWireframe(on));
+
+	// color swatches: a radio group, each swatch painted with the accent the UI
+	// takes on when it's picked
+	const colorGroup = $("color");
+	const swatches = COLOR_OPTIONS.map((option) => {
+		const swatch = document.createElement("button");
+		swatch.type = "button";
+		swatch.className = "swatch";
+		swatch.title = option.label;
+		swatch.setAttribute("role", "radio");
+		swatch.setAttribute("aria-label", option.label);
+		swatch.style.setProperty("--swatch", `rgb(${paletteFor(option).accent.join(", ")})`);
+		swatch.addEventListener("click", () => {
+			player.setColor(option.id);
+			markColor();
+		});
+		colorGroup.appendChild(swatch);
+		return {id: option.id, swatch};
+	});
+	const markColor = () => {
+		for (const {id, swatch} of swatches) swatch.setAttribute("aria-checked", String(id === player.playback.color));
+	};
+	markColor();
 
 	// mute button + volume slider (main bar)
 	const mutePath = $("mutePath");
